@@ -1,8 +1,0 @@
-[package]
-name = "samotop-test-server"
-version = "0.0.1"
-edition = "2024"
-authors = ["Utishnik"]
-
-[dependencies]
-samotop = "0.13.2"

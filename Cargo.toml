@@ -32,6 +32,7 @@ utoipa-swagger-ui = { version = "5.0.0", features = ["actix-web"] }
 tokio = { version = "1.0", features = ["full"] }
 tokio-util = { version = "0.7", features = ["compat"] }
 bytes = "1.11.0"
+async-smtp = {path = "src/async_smtp"}
 
 [profile.release]
 opt-level = "z"           

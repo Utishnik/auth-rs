@@ -5,12 +5,12 @@ use crate::services::role::role_service::RoleService;
 use crate::services::user::user_service::UserService;
 
 pub mod audit;
+pub mod email;
 pub mod jwt;
 pub mod password;
 pub mod permission;
 pub mod role;
 pub mod user;
-pub mod email;
 
 #[derive(Clone)]
 pub struct Services {

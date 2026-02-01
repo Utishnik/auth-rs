@@ -10,6 +10,7 @@ pub mod password;
 pub mod permission;
 pub mod role;
 pub mod user;
+pub mod email;
 
 #[derive(Clone)]
 pub struct Services {

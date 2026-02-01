@@ -1,10 +1,10 @@
 [package]
 name = "auth-rs"
 description = "Authorization and authentication service"
-version = "0.2.1"
+version = "0.2.2"
 edition = "2021"
 rust-version = "1.74.1"
-authors = ["CodeDead <admin@codedead.com>"]
+authors = ["CodeDead <admin@codedead.com> and Utishnik"]
 readme = "README.md"
 license = "GPL-3.0-only"
 homepage = "https://codedead.com/"
@@ -29,14 +29,37 @@ env_logger = "0.10.1"
 log = "0.4.20"
 utoipa = "4.1.0"
 utoipa-swagger-ui = { version = "5.0.0", features = ["actix-web"] }
-
-[profile.dev]
-panic = "abort"
+async-smtp = "0.10.2"
 
 [profile.release]
-lto = true
-strip = "symbols"
+opt-level = "z"           
+lto = true                # полная LTO
+codegen-units = 1         # максимум оптимизации
+strip = "symbols"         # удаляет все символы
+panic = "abort"           # вместо unwinding
+# Убираем отладочную информацию
 debug = false
-panic = "abort"
+debug-assertions = false
+
+[profile.dev]
+opt-level = "s"      # мега оптимизация по размеру
+lto = true           # link-time optimization
+codegen-units = 16
+
+[profile.minimal]
+inherits = "release"
 opt-level = "z"
+lto = "thin"
 codegen-units = 1
+strip = "symbols"
+panic = "abort"
+incremental = false
+
+[profile.blazing]
+inherits = "release"
+opt-level = 3
+lto = "fat"
+codegen-units = 1
+strip = "symbols"
+panic = "abort"
+incremental = false

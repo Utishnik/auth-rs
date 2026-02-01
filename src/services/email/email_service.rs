@@ -44,7 +44,7 @@ async fn smtp_transport_simple() -> Result<()> {
         async_smtp::error::Error,
     > = create_transport(client, tcp_stream).await;
     if transport.is_err() {
-        panic!("error create transport");
+        debug!("error create transport");
         return Err("error create transport".into());
     }
     let mut unwrap_transport: SmtpTransport<BufStream<TcpStream>> =
@@ -60,7 +60,7 @@ async fn smtp_transport_simple() -> Result<()> {
     let send_res: std::result::Result<async_smtp::response::Response, async_smtp::error::Error> =
         unwrap_transport.send(email).await;
     if send_res.is_err(){
-        panic!("send error!");
+        debug!("send error!");
     }
     /*
     let res: async_smtp::Message = email.message();

@@ -105,7 +105,11 @@ impl<S: BufRead + Write + Unpin> SmtpTransport<S> {
     pub async fn new(builder: SmtpClient, stream: S) -> Result<Self, Error> {
         let mut stream = SmtpStream::new(stream);
         if builder.expect_greeting {
-            let _greeting = stream.read_response().await?;
+            let _greeting: Result<crate::response::Response, Error> = stream.read_response().await;
+            if _greeting.is_err(){
+                println!("Creates a new SMTP transport read_response error");
+                return Err(_greeting.unwrap_err());
+            }
         }
         let ehlo_response = stream
             .ehlo(ClientId::new(builder.hello_name.to_string()))
@@ -113,7 +117,7 @@ impl<S: BufRead + Write + Unpin> SmtpTransport<S> {
         let server_info = ServerInfo::from_response(&ehlo_response)?;
 
         // Print server information
-        debug!("server {}", server_info);
+        println!("server {}", server_info);
 
         let transport = SmtpTransport {
             server_info,

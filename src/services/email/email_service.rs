@@ -1,9 +1,10 @@
 use crate::repository::user::user_model::{self, User};
-use async_smtp::{Envelope, Message, SendableEmail, SmtpClient, SmtpTransport};
 use async_smtp::authentication::Credentials;
+use async_smtp::{Envelope, Message, SendableEmail, SmtpClient, SmtpTransport};
 use bytes::BytesMut;
 use log::debug;
 use std::error::Error as StdErr;
+use std::fmt::Debug;
 use tokio::io::{AsyncReadExt, BufStream};
 use tokio::net::TcpStream;
 
@@ -22,29 +23,45 @@ impl User {
 
 pub type Error = Box<dyn std::error::Error + Send + Sync>;
 pub type Result<T> = std::result::Result<T, Error>;
-pub type TransportErr =
+pub type TransportResult =
     std::result::Result<SmtpTransport<BufStream<TcpStream>>, async_smtp::error::Error>;
 
-async fn create_transport(smtp_client: SmtpClient, tcp_stream: TcpStream) -> TransportErr {
+async fn create_transport(smtp_client: SmtpClient, tcp_stream: TcpStream) -> TransportResult {
     let stream: BufStream<tokio::net::TcpStream> = BufStream::new(tcp_stream);
-    let res: TransportErr = SmtpTransport::new(smtp_client, stream).await;
+    let res: TransportResult = SmtpTransport::new(smtp_client, stream).await;
     {
         if res.is_err() {
-            panic!("create_transport res is error");
+            println!("create_transport res is error");
+            let unwrap_err: async_smtp::error::Error = unsafe{res.unwrap_err_unchecked()};
+            let unwrap_err_fmt: String = format!("{unwrap_err}");
+            println!("error msg: {}",unwrap_err_fmt);
+            /* 
+            match unwrap_err {
+                async_smtp::error::Error::Timeout(ref x) => {},
+                _ => todo!(),
+            }
+            */
+            return Err(unwrap_err);
         }
     }
     res
 }
 
 async fn smtp_transport_simple() -> Result<()> {
-    let tcp_stream: TcpStream = TcpStream::connect("127.0.0.1:2525").await?;
+    let tcp_stream: std::result::Result<TcpStream, std::io::Error> =
+        TcpStream::connect("127.0.0.1:2525").await;
+    if tcp_stream.is_err(){
+        println!("tcp stream connect is error");
+        return unsafe{Err(Box::new(tcp_stream.unwrap_err_unchecked()))};
+    }
+    let tcp_stream_unwrap: TcpStream = unsafe{tcp_stream.unwrap_unchecked()};
     let client: SmtpClient = SmtpClient::new();
     let transport: std::result::Result<
         SmtpTransport<BufStream<TcpStream>>,
         async_smtp::error::Error,
-    > = create_transport(client, tcp_stream).await;
+    > = create_transport(client, tcp_stream_unwrap).await;
     if transport.is_err() {
-        debug!("error create transport");
+        println!("error create transport");
         return Err("error create transport".into());
     }
     let mut unwrap_transport: SmtpTransport<BufStream<TcpStream>> =
@@ -59,8 +76,8 @@ async fn smtp_transport_simple() -> Result<()> {
     );
     let send_res: std::result::Result<async_smtp::response::Response, async_smtp::error::Error> =
         unwrap_transport.send(email).await;
-    if send_res.is_err(){
-        debug!("send error!");
+    if send_res.is_err() {
+        println!("send error!");
     }
     /*
     let res: async_smtp::Message = email.message();
@@ -78,7 +95,7 @@ fn test1() {
         let res: std::result::Result<(), Box<dyn StdErr + Send + Sync>> =
             smtp_transport_simple().await;
         if res.is_err() {
-            panic!("ошибка");
+            println!("ошибка!!!");
         }
     });
 }

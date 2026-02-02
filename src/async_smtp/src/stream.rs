@@ -72,17 +72,22 @@ impl<S: BufRead + Write + Unpin> SmtpStream<S> {
         let mut buffer = String::with_capacity(100);
 
         loop {
-            let read = reader.read_line(&mut buffer).await?;
-            if read == 0 {
+            let read_res: Result<usize, std::io::Error> = reader.read_line(&mut buffer).await;
+            if read_res.is_err(){
+                println!("SMTP response read_response: read_line is err");
+                return Err(Error::Io(read_res.unwrap_err()));
+            }
+            let read: usize = read_res.unwrap();//safe!
+            if read == 0{
                 break;
             }
-            debug!("<< {}", escape_crlf(&buffer));
+            println!("<< {}", escape_crlf(&buffer));
             match parse_response(&buffer) {
                 Ok((_remaining, response)) => {
                     if response.is_positive() {
                         return Ok(response);
                     }
-
+                    
                     return Err(response.into());
                 }
                 Err(nom::Err::Failure(e)) => {

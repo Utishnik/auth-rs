@@ -1,5 +1,5 @@
 use crate::repository::user::user_model::{self, User};
-use async_smtp::authentication::Credentials;
+use async_smtp::authentication::{Credentials, Mechanism};
 use async_smtp::{Envelope, Message, SendableEmail, SmtpClient, SmtpTransport};
 use bytes::BytesMut;
 use log::debug;
@@ -32,10 +32,10 @@ async fn create_transport(smtp_client: SmtpClient, tcp_stream: TcpStream) -> Tra
     {
         if res.is_err() {
             println!("create_transport res is error");
-            let unwrap_err: async_smtp::error::Error = unsafe{res.unwrap_err_unchecked()};
+            let unwrap_err: async_smtp::error::Error = unsafe { res.unwrap_err_unchecked() };
             let unwrap_err_fmt: String = format!("{unwrap_err}");
-            println!("error msg: {}",unwrap_err_fmt);
-            /* 
+            println!("error msg: {}", unwrap_err_fmt);
+            /*
             match unwrap_err {
                 async_smtp::error::Error::Timeout(ref x) => {},
                 _ => todo!(),
@@ -50,12 +50,17 @@ async fn create_transport(smtp_client: SmtpClient, tcp_stream: TcpStream) -> Tra
 async fn smtp_transport_simple() -> Result<()> {
     let tcp_stream: std::result::Result<TcpStream, std::io::Error> =
         TcpStream::connect("127.0.0.1:2525").await;
-    if tcp_stream.is_err(){
+    if tcp_stream.is_err() {
         println!("tcp stream connect is error");
-        return unsafe{Err(Box::new(tcp_stream.unwrap_err_unchecked()))};
+        return unsafe { Err(Box::new(tcp_stream.unwrap_err_unchecked())) };
     }
-    let tcp_stream_unwrap: TcpStream = unsafe{tcp_stream.unwrap_unchecked()};
+    let tcp_stream_unwrap: TcpStream = unsafe { tcp_stream.unwrap_unchecked() };
+    let smtp_server = "smtp.gmail.com";
+    let smtp_port = 587;
+    let creds: Credentials =
+        Credentials::new("smtp_username".to_owned(), "smtp_password".to_owned());
     let client: SmtpClient = SmtpClient::new();
+
     let transport: std::result::Result<
         SmtpTransport<BufStream<TcpStream>>,
         async_smtp::error::Error,
@@ -66,6 +71,12 @@ async fn smtp_transport_simple() -> Result<()> {
     }
     let mut unwrap_transport: SmtpTransport<BufStream<TcpStream>> =
         unsafe { transport.unwrap_unchecked() };
+    let auth_res: std::result::Result<async_smtp::response::Response, async_smtp::error::Error> =
+        unwrap_transport.auth(Mechanism::Xoauth2, &creds).await;
+    if auth_res.is_err(){
+        println!("error auth!");
+        return Err("error auth".into());
+    }
 
     let email: SendableEmail = SendableEmail::new(
         Envelope::new(
@@ -89,7 +100,7 @@ async fn smtp_transport_simple() -> Result<()> {
 }
 
 #[test]
-fn test1() {
+fn test1() -> Result<()> {
     let rt: tokio::runtime::Runtime = tokio::runtime::Runtime::new().unwrap();
     rt.block_on(async {
         let res: std::result::Result<(), Box<dyn StdErr + Send + Sync>> =
@@ -98,4 +109,5 @@ fn test1() {
             println!("ошибка!!!");
         }
     });
+    Ok(())
 }

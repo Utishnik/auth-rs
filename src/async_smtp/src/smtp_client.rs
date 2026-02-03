@@ -106,7 +106,7 @@ impl<S: BufRead + Write + Unpin> SmtpTransport<S> {
         let mut stream = SmtpStream::new(stream);
         if builder.expect_greeting {
             let _greeting: Result<crate::response::Response, Error> = stream.read_response().await;
-            if _greeting.is_err(){
+            if _greeting.is_err() {
                 println!("Creates a new SMTP transport read_response error");
                 return Err(_greeting.unwrap_err());
             }

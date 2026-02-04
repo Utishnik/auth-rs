@@ -2,6 +2,7 @@ use super::utils::build_addres;
 use crate::repository::user::user_model::{self, User};
 use crate::services::email::utils;
 use async_smtp::authentication::{Credentials, Mechanism};
+use async_smtp::util::get_all_mechanism;
 use async_smtp::{Envelope, Message, SendableEmail, SmtpClient, SmtpTransport};
 use bytes::BytesMut;
 use log::debug;
@@ -9,6 +10,7 @@ use std::error::Error as StdErr;
 use std::fmt::Debug;
 use tokio::io::{AsyncReadExt, BufStream};
 use tokio::net::TcpStream;
+use native_tls::TlsConnector;
 
 impl User {
     fn get_email(&self) -> Option<String> {
@@ -62,7 +64,7 @@ async fn smtp_transport_simple() -> Result<()> {
     }
     let tcp_stream_unwrap: TcpStream = unsafe { tcp_stream.unwrap_unchecked() };
     let creds: Credentials = Credentials::new(
-        "@mail.ru".to_owned(),
+        "utishnik@mail.ru".to_owned(),
         "".to_owned(),
     );
     let client: SmtpClient = SmtpClient::new();
@@ -78,12 +80,16 @@ async fn smtp_transport_simple() -> Result<()> {
     let unwrap_transport: SmtpTransport<BufStream<TcpStream>> =
         unsafe { transport.unwrap_unchecked() };
     let start_tls: std::result::Result<BufStream<TcpStream>, async_smtp::error::Error> =
-        unwrap_transport.starttls().await;//todo хули move 
-    if start_tls.is_err(){
+        unwrap_transport.starttls().await;
+    if start_tls.is_err() {
         println!("error start_tls!");
         return Err("error auth".into());
     }
-    let unwrap_tls_result: BufStream<TcpStream> = unsafe{start_tls.unwrap_unchecked()};
+    let unwrap_tls_result: BufStream<TcpStream> = unsafe { start_tls.unwrap_unchecked() };
+    let tls_tcp_stream: TcpStream = unwrap_tls_result.into_inner();
+    let tls_connector: TlsConnector = TlsConnector::builder()
+        .min_protocol_version(Some(Protocol::Tlsv12))
+        .build()?;
 
     let transport: std::result::Result<
         SmtpTransport<BufStream<TcpStream>>,
@@ -91,9 +97,11 @@ async fn smtp_transport_simple() -> Result<()> {
     > = create_transport(client.clone(), unwrap_tls_result.into_inner()).await;
     let mut unwrap_transport: SmtpTransport<BufStream<TcpStream>> =
         unsafe { transport.unwrap_unchecked() };
+    println!("create tls transport");////
 
-    let auth_res: std::result::Result<async_smtp::response::Response, async_smtp::error::Error> =
-        unwrap_transport.auth(Mechanism::Login, &creds).await;
+    let auth_res: std::result::Result<(), async_smtp::error::Error> = unwrap_transport
+        .try_login(&creds, &get_all_mechanism())
+        .await;
     if auth_res.is_err() {
         println!("error auth!");
         return Err("error auth".into());

@@ -2,7 +2,7 @@ use std::fmt::Debug;
 
 use log::{debug, info};
 
-use crate::authentication::{Credentials, Mechanism};
+use crate::authentication::{get_count_mechanism, Credentials, Mechanism};
 use crate::commands::*;
 use crate::error::{Error, SmtpResult};
 use crate::extension::{ClientId, Extension, MailBodyParameter, MailParameter, ServerInfo};
@@ -15,7 +15,7 @@ use async_std::io::{BufRead, Write};
 use tokio::io::{AsyncBufRead as BufRead, AsyncWrite as Write};
 
 /// Contains client configuration
-#[derive(Debug,Clone)]
+#[derive(Debug, Clone)]
 pub struct SmtpClient {
     /// Name sent during EHLO
     hello_name: ClientId,
@@ -230,12 +230,14 @@ impl<S: BufRead + Write + Unpin> SmtpTransport<S> {
             self.supports_feature(Extension::Pipelining) && self.client_info.pipelining;
 
         if pipelining {
+            println!("pipe lining:");
             self.stream
                 .send_command(MailCommand::new(
                     email.envelope().from().cloned(),
                     mail_options,
                 ))
                 .await?;
+            println!("MailCommand end");
             let mut sent_commands = 1;
 
             // Recipient
@@ -245,21 +247,26 @@ impl<S: BufRead + Write + Unpin> SmtpTransport<S> {
                     .await?;
                 sent_commands += 1;
             }
+            println!("RcptCommand end");
 
             // Data
             self.stream.send_command(DataCommand).await?;
             sent_commands += 1;
+            println!("DataCommand end");
 
             for _ in 0..sent_commands {
                 self.stream.read_response().await?;
             }
+            println!("read response end");
         } else {
+            println!("not pipelining");
             self.stream
                 .command(MailCommand::new(
                     email.envelope().from().cloned(),
                     mail_options,
                 ))
                 .await?;
+            println!("MailCommand end");
 
             // Recipient
             for to_address in email.envelope().to() {
@@ -269,9 +276,11 @@ impl<S: BufRead + Write + Unpin> SmtpTransport<S> {
                 // Log the rcpt command
                 debug!("to=<{}>", to_address);
             }
+            println!("RcptCommand end");
 
             // Data
             self.stream.command(DataCommand).await?;
+            println!("DataCommand end");
         }
 
         let res = self.stream.message(email.message()).await;

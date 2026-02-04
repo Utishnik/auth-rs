@@ -1,5 +1,6 @@
 //! Utils for string manipulation
 
+use crate::authentication::Mechanism;
 use std::fmt::{Display, Formatter, Result as FmtResult};
 
 /// Encode a string as xtext
@@ -19,6 +20,15 @@ impl Display for XText<'_> {
         }
         Ok(())
     }
+}
+
+#[doc = "возвращет вектор всех механизмов аутификации"]
+pub fn get_all_mechanism() -> Vec<Mechanism> {
+    let mut result: Vec<Mechanism> = Vec::new();
+    result.push(Mechanism::Login);
+    result.push(Mechanism::Plain);
+    result.push(Mechanism::Xoauth2);
+    result
 }
 
 #[cfg(test)]

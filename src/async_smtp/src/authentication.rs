@@ -61,6 +61,11 @@ pub enum Mechanism {
     Xoauth2,
 }
 
+#[doc = "возвращет количество всего механизмов аутификации"]
+pub fn get_count_mechanism() -> usize {
+    3
+}
+
 impl Display for Mechanism {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         write!(

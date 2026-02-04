@@ -1,4 +1,6 @@
+use super::utils::build_addres;
 use crate::repository::user::user_model::{self, User};
+use crate::services::email::utils;
 use async_smtp::authentication::{Credentials, Mechanism};
 use async_smtp::{Envelope, Message, SendableEmail, SmtpClient, SmtpTransport};
 use bytes::BytesMut;
@@ -48,40 +50,59 @@ async fn create_transport(smtp_client: SmtpClient, tcp_stream: TcpStream) -> Tra
 }
 
 async fn smtp_transport_simple() -> Result<()> {
+    let smtp_server: &str = "smtp.mail.ru";
+    let smtp_port: i32 = 587;
+    let full_addres: String = utils::build_addres(smtp_server, &smtp_port.to_string());
+    println!("addres: {}", full_addres);
     let tcp_stream: std::result::Result<TcpStream, std::io::Error> =
-        TcpStream::connect("127.0.0.1:2525").await;
+        TcpStream::connect(full_addres).await;
     if tcp_stream.is_err() {
         println!("tcp stream connect is error");
         return unsafe { Err(Box::new(tcp_stream.unwrap_err_unchecked())) };
     }
     let tcp_stream_unwrap: TcpStream = unsafe { tcp_stream.unwrap_unchecked() };
-    let smtp_server = "smtp.gmail.com";
-    let smtp_port = 587;
-    let creds: Credentials =
-        Credentials::new("smtp_username".to_owned(), "smtp_password".to_owned());
+    let creds: Credentials = Credentials::new(
+        "@mail.ru".to_owned(),
+        "".to_owned(),
+    );
     let client: SmtpClient = SmtpClient::new();
 
     let transport: std::result::Result<
         SmtpTransport<BufStream<TcpStream>>,
         async_smtp::error::Error,
-    > = create_transport(client, tcp_stream_unwrap).await;
+    > = create_transport(client.clone(), tcp_stream_unwrap).await;
     if transport.is_err() {
         println!("error create transport");
         return Err("error create transport".into());
     }
+    let unwrap_transport: SmtpTransport<BufStream<TcpStream>> =
+        unsafe { transport.unwrap_unchecked() };
+    let start_tls: std::result::Result<BufStream<TcpStream>, async_smtp::error::Error> =
+        unwrap_transport.starttls().await;//todo хули move 
+    if start_tls.is_err(){
+        println!("error start_tls!");
+        return Err("error auth".into());
+    }
+    let unwrap_tls_result: BufStream<TcpStream> = unsafe{start_tls.unwrap_unchecked()};
+
+    let transport: std::result::Result<
+        SmtpTransport<BufStream<TcpStream>>,
+        async_smtp::error::Error,
+    > = create_transport(client.clone(), unwrap_tls_result.into_inner()).await;
     let mut unwrap_transport: SmtpTransport<BufStream<TcpStream>> =
         unsafe { transport.unwrap_unchecked() };
+
     let auth_res: std::result::Result<async_smtp::response::Response, async_smtp::error::Error> =
-        unwrap_transport.auth(Mechanism::Xoauth2, &creds).await;
-    if auth_res.is_err(){
+        unwrap_transport.auth(Mechanism::Login, &creds).await;
+    if auth_res.is_err() {
         println!("error auth!");
         return Err("error auth".into());
     }
 
     let email: SendableEmail = SendableEmail::new(
         Envelope::new(
-            Some("user@localhost".parse().unwrap()),
-            vec!["root@localhost".parse().unwrap()],
+            Some("utishnik@mail.ru".parse().unwrap()),
+            vec!["utishnik@mail.ru".parse().unwrap()],
         )?,
         "Hello world",
     );

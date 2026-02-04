@@ -15,7 +15,7 @@ use async_std::io::{BufRead, Write};
 use tokio::io::{AsyncBufRead as BufRead, AsyncWrite as Write};
 
 /// Contains client configuration
-#[derive(Debug)]
+#[derive(Debug,Clone)]
 pub struct SmtpClient {
     /// Name sent during EHLO
     hello_name: ClientId,

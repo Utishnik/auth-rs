@@ -115,11 +115,12 @@ impl<S: BufRead + Write + Unpin> SmtpTransport<S> {
             .ehlo(ClientId::new(builder.hello_name.to_string()))
             .await?;
         let server_info = ServerInfo::from_response(&ehlo_response)?;
+        println!("echo response");
 
         // Print server information
         println!("server {}", server_info);
 
-        let transport = SmtpTransport {
+        let transport: SmtpTransport<S> = SmtpTransport {
             server_info,
             client_info: builder,
             stream,

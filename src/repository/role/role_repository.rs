@@ -2,6 +2,7 @@ use crate::repository::audit::audit_repository::Error as AuditError;
 use crate::repository::role::role_model::Role;
 use crate::repository::user::user_repository::Error as UserError;
 use crate::services::user::user_service::UserService;
+use crate::web::controller::user::user_controller::delete_self;
 use chrono::{DateTime, Utc};
 use futures::TryStreamExt;
 use mongodb::bson::doc;
@@ -10,8 +11,32 @@ use mongodb::bson::Bson;
 use mongodb::error::Error as MongoError;
 use mongodb::options::FindOptions;
 use mongodb::Database;
+use serde::Deserialize;
+use serde::Serialize;
 use std::fmt;
 use std::time::SystemTime;
+use strum_macros::Display;
+
+#[derive(Debug, Clone, Display, Serialize, Deserialize)]
+#[serde(rename_all = "UPPERCASE")]
+pub enum StandartRole {
+    #[strum(serialize = "Owner")]
+    Owner,
+    #[strum(serialize = "Admin")]
+    Admin,
+    #[strum(serialize = "Moder")]
+    Moder,
+    #[strum(serialize = "Member")]
+    Member,
+    #[strum(serialize = "Developer")]
+    Developer,
+    #[strum(serialize = "Contributor")]
+    Contributor,
+    #[strum(serialize = "Billing")]
+    Billing,
+    #[strum(serialize = "Viewer")]
+    Viewer,
+}
 
 #[derive(Clone)]
 pub struct RoleRepository {

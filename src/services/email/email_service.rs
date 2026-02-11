@@ -10,7 +10,6 @@ use std::error::Error as StdErr;
 use std::fmt::Debug;
 use tokio::io::{AsyncReadExt, BufStream};
 use tokio::net::TcpStream;
-use native_tls::TlsConnector;
 
 impl User {
     fn get_email(&self) -> Option<String> {
@@ -33,6 +32,7 @@ pub type TransportResult =
 async fn create_transport(smtp_client: SmtpClient, tcp_stream: TcpStream) -> TransportResult {
     let stream: BufStream<tokio::net::TcpStream> = BufStream::new(tcp_stream);
     let res: TransportResult = SmtpTransport::new(smtp_client, stream).await;
+    println!("TransportResult create");
     {
         if res.is_err() {
             println!("create_transport res is error");
@@ -48,6 +48,7 @@ async fn create_transport(smtp_client: SmtpClient, tcp_stream: TcpStream) -> Tra
             return Err(unwrap_err);
         }
     }
+    println!("create transport end");
     res
 }
 
@@ -86,18 +87,19 @@ async fn smtp_transport_simple() -> Result<()> {
         return Err("error auth".into());
     }
     let unwrap_tls_result: BufStream<TcpStream> = unsafe { start_tls.unwrap_unchecked() };
-    let tls_tcp_stream: TcpStream = unwrap_tls_result.into_inner();
-    let tls_connector: TlsConnector = TlsConnector::builder()
-        .min_protocol_version(Some(Protocol::Tlsv12))
-        .build()?;
 
+    println!("start tls");
     let transport: std::result::Result<
         SmtpTransport<BufStream<TcpStream>>,
         async_smtp::error::Error,
     > = create_transport(client.clone(), unwrap_tls_result.into_inner()).await;
+    if transport.is_err() {
+        println!("create tls transport error!");
+        return Err("create tls transport error!".into());
+    }
+    println!("create tls transport!"); ////
     let mut unwrap_transport: SmtpTransport<BufStream<TcpStream>> =
         unsafe { transport.unwrap_unchecked() };
-    println!("create tls transport");////
 
     let auth_res: std::result::Result<(), async_smtp::error::Error> = unwrap_transport
         .try_login(&creds, &get_all_mechanism())

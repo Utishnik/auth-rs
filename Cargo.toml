@@ -1,4 +1,3 @@
-cargo-features = ["codegen-backend"]
 [package]
 name = "auth-rs"
 description = "Authorization and authentication service"

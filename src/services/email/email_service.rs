@@ -97,7 +97,7 @@ async fn smtp_transport_simple() -> Result<()> {
         println!("create tls transport error!");
         return Err("create tls transport error!".into());
     }
-    println!("create tls transport!"); ////
+    println!("create tls transport!"); //недоходит
     let mut unwrap_transport: SmtpTransport<BufStream<TcpStream>> =
         unsafe { transport.unwrap_unchecked() };
 

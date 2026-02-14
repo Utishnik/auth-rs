@@ -48,10 +48,11 @@ debug = false
 debug-assertions = false
 
 [profile.dev]
-codegen-backend = "cranelift"
+#codegen-backend = "cranelift"
 opt-level = "z"      # оптимизация по размеру
 lto = true           # link-time optimization
 codegen-units = 16
+incremental = true
 
 [workspace]
 members = [
@@ -59,6 +60,7 @@ members = [
 ]
 
 [profile.minimal]
+#codegen-backend = "cranelift"
 inherits = "release"
 opt-level = "z"
 lto = "thin"

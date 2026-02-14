@@ -17,11 +17,9 @@ Session.vim
 Cargo.lock
 ## Tool
 .valgrindrc
-.cargo
 
 ## Build
 /target
-rustc_codegen_cranelift
 
 ## Env
 /.env

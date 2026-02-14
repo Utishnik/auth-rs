@@ -8,15 +8,23 @@ on:
 
 env:
   CARGO_TERM_COLOR: always
+  RUSTFLAGS: "-Clink-arg=--ld-path=wild"  # Добавляем флаг для использования wild
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
-
+    
     steps:
     - uses: actions/checkout@v4
+    
+    - name: Install cargo-binstall
+      run: curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash
+    
+    - name: Install wild-linker
+      run: cargo binstall wild -y --force
+      
     - name: Build
       run: cargo build --verbose
+      
     - name: Run tests
       run: cargo test --verbose

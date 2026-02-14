@@ -1,3 +1,4 @@
+cargo-features = ["codegen-backend"]
 [package]
 name = "auth-rs"
 description = "Authorization and authentication service"
@@ -47,7 +48,8 @@ debug = false
 debug-assertions = false
 
 [profile.dev]
-opt-level = "s"      # мега оптимизация по размеру
+codegen-backend = "cranelift"
+opt-level = "z"      # оптимизация по размеру
 lto = true           # link-time optimization
 codegen-units = 16
 

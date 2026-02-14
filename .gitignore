@@ -21,6 +21,7 @@ Cargo.lock
 
 ## Build
 /target
+rustc_codegen_cranelift
 
 ## Env
 /.env

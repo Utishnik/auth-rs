@@ -8,6 +8,7 @@ on:
 
 env:
   CARGO_TERM_COLOR: always
+  RUSTFLAGS: "-Clinker=clang -Clink-arg=--ld-path=wild"
 
 jobs:
   build:
@@ -16,15 +17,20 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     
-    - name: Install wild linker
-      uses: davidlattimore/wild-action@v1
+    - name: Install system dependencies (clang)
+      run: sudo apt-get update && sudo apt-get install -y clang
       
-    - name: Build with wild
+    - name: Install cargo-binstall
+      run: curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash
+      
+    - name: Install wild linker
+      run: cargo binstall wild-linker -y --force
+      
+    - name: Verify wild installation
+      run: wild --version
+      
+    - name: Build
       run: cargo build --verbose
-      env:
-        RUSTFLAGS: "-Clinker=clang -Clink-arg=--ld-path=wild"
       
     - name: Run tests
       run: cargo test --verbose
-      env:
-        RUSTFLAGS: "-Clinker=clang -Clink-arg=--ld-path=wild"
